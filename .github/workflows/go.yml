@@ -13,9 +13,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      HAS_BUN_PROJECT: ${{ hashFiles('package.json') != '' }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -30,11 +27,11 @@ jobs:
         run: go version
 
       - name: Set up Bun
-        if: ${{ env.HAS_BUN_PROJECT == 'true' }}
+        if: ${{ hashFiles('package.json') != '' }}
         uses: oven-sh/setup-bun@v2
 
       - name: Install Bun dependencies
-        if: ${{ env.HAS_BUN_PROJECT == 'true' }}
+        if: ${{ hashFiles('package.json') != '' }}
         run: |
           if [ -f bun.lock ]; then
             bun install --frozen-lockfile
@@ -43,7 +40,7 @@ jobs:
           fi
 
       - name: Build Bun app
-        if: ${{ env.HAS_BUN_PROJECT == 'true' }}
+        if: ${{ hashFiles('package.json') != '' }}
         run: bun run build
 
       - name: Build
