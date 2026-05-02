@@ -20,8 +20,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version-file: go.mod
+          go-version-file: tutoriais_web/test/go.mod
           cache: true
+          cache-dependency-path: |
+            **/go.mod
+            **/go.sum
 
       - name: Show Go version
         run: go version
@@ -44,7 +47,27 @@ jobs:
         run: bun run build
 
       - name: Build
-        run: go build ./...
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r modfile; do
+            module_dir="$(dirname "$modfile")"
+            echo "::group::go build ${module_dir}"
+            build_dir="${RUNNER_TEMP:-/tmp}/go-build"
+            mkdir -p "$build_dir"
+            (cd "$module_dir" && go build -o "$build_dir" ./...)
+            echo "::endgroup::"
+          done < <(find . -name go.mod -not -path './.git/*' | sort)
 
       - name: Test
-        run: go test ./...
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r modfile; do
+            module_dir="$(dirname "$modfile")"
+            echo "::group::go test ${module_dir}"
+            (cd "$module_dir" && go test ./...)
+            echo "::endgroup::"
+          done < <(find . -name go.mod -not -path './.git/*' | sort)
